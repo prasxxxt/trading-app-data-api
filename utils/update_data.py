@@ -1,13 +1,14 @@
+# update data.json if financial data is expired
+
 import time
 import json
-import config
-from scrapper import *
 import concurrent.futures
-    
-    
+from utils.collect_data import *
+
+
 # update data in data.json if expired 
-def collect_data():
-    json_data = open("data.json")
+def check_collect_data():
+    json_data = open("./data/data.json")
     data = json.load(json_data)
     old_timestamp = data["timestamp"] 
     new_timestamp = round(time.time())
@@ -31,15 +32,29 @@ def collect_data():
                 executor.submit(get_cot_data, j)
         data["cot-data"] = cot_data
 
+        # collect and store technical data
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            for j in all_pairs:
+                executor.submit(get_technical_data, j)
+        data["technical-data"] = technical_data
+
+        # collect and store seasonality data
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            for j in all_pairs:
+                executor.submit(get_seasonality_data, j)
+        data["seasonality-data"] = seasonality_data
+
         # collect and store retail data
         get_retail_data()
         data["retail-data"] = retail_data
         
             # update data in data.json
-        with open("data.json", "w") as outfile:
+        with open("./data/data.json", "w") as outfile:
             json.dump(data, outfile)
 
+
         outfile.close()
+
     else:
         # print("Data is fresh")
         return data
@@ -48,28 +63,4 @@ def collect_data():
 def update_required(old_timestamp, new_timestamp):
     diff_min  = (new_timestamp - old_timestamp) / 60
     # print(f"Time time difference is: {round(diff_min)} Minutes")
-    return True if diff_min > config.DATA_EXPIRATION_MINUTES else False
-
-
-def return_retail():
-    json_data = open("data.json")
-    data = json.load(json_data)
-    retail = data["retail-data"]
-    json_data.close()
-    return retail
-
-
-def return_cot():
-    json_data = open("data.json")
-    data = json.load(json_data)
-    cot = data["cot-data"]
-    json_data.close()
-    return cot
-
-
-def return_fundamental():
-    json_data = open("data.json")
-    data = json.load(json_data)
-    fundamental = data["fundamental-data"]
-    json_data.close()
-    return fundamental
+    return True if diff_min > 30 else False

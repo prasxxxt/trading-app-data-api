@@ -1,5 +1,8 @@
 import json
-from scoring import *
+import datetime
+from calculate.scoring import *
+
+today = datetime.date.today()
 
 currency_map = {
     "EUR": "euro-area",
@@ -13,18 +16,19 @@ currency_map = {
 }
 
 
-def return_summary():
-# needs to be inplemented
-    json_data = open("data.json")
+def get_summary(pair):
+
+    base = pair[:3]
+    quote = pair[3:]
+    json_data = open("./data/data.json")
     data = json.load(json_data)
 
     fundamental_data = data["fundamental-data"]
     retail_data = data["retail-data"]
     cot_data = data["cot-data"]
+    technical_data = data["technical-data"]
+    seasonality_data = data["seasonality-data"]
 
-    pair = "EURUSD"
-    base = "EUR"
-    quote = "USD"
 
     int_diff = float(fundamental_data[currency_map[base]]["interest-rate"]["last"]) - float(
         fundamental_data[currency_map[quote]]["interest-rate"]["last"])
@@ -60,5 +64,8 @@ def return_summary():
     une_score = score_fundamental(une_diff, une_change_diff)
     cot_score = score_cot(cot_data[base], cot_data[quote])
     ret_score = score_retail(float(retail_data[pair]["long"]), float(retail_data[pair]["short"]))
-    total = round(int_score + gdp_score + inf_score + une_score + cot_score + ret_score, 0)
-    return int_score, gdp_score, inf_score, une_score, cot_score, ret_score, total
+    tec_score = score_technical(technical_data[pair])
+    sea_score = score_seasonality(seasonality_data[pair][str(today.month).zfill(2)])
+
+    total = round(int_score + gdp_score + inf_score + une_score + cot_score + ret_score + tec_score + sea_score, 0)
+    return (int_score, gdp_score, inf_score, une_score, cot_score, ret_score, tec_score, sea_score, total)

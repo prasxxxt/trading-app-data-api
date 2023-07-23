@@ -28,3 +28,26 @@ def score_retail(long, short):
         return round((short - 50) * 2 / 10, 1)
     else:
         return 0
+    
+
+def score_technical(tech):
+    score = int(tech["BUY"]) - int(tech["SELL"])
+    if score > 20:
+        return 20
+    elif score < -20:
+        return -20
+    else:
+        return score
+
+
+def score_seasonality(data):
+    score_10, score_5 = data["10-years"] * 2.5, data["5-years"] * 2.5
+    if score_10 > 5:
+        score_10 = 5
+    elif score_10 < -5:
+        score_10 = -5
+    if score_5 > 5:
+        score_5 = 5
+    elif score_5 < -5:
+        score_5 = -5
+    return round(score_10 + score_5, 1)
